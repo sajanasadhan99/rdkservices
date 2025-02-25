@@ -72,7 +72,7 @@ string PlatformCapsData::GetDeviceType() {
 
   device_type = deviceType.c_str();
   deviceType = (strcmp("mediaclient", device_type) == 0) ? "IpStb" : (strcmp("hybrid", device_type) == 0) ? "QamIpStb" : "TV";
-   return deviceType;
+  return deviceType;
   }
 }
 
