@@ -20,6 +20,7 @@
 #include "platformcapsdata.h"
 
 #include <regex>
+#include <fstream>
 
 namespace {
   string stringFromHex(const string &hex) {
@@ -48,24 +49,32 @@ string PlatformCapsData::GetModel() {
       .Get(_T("model_number")).String();
 }
 
-#ifndef ENABLE_COMMUNITY_DEVICE_TYPE
 string PlatformCapsData::GetDeviceType() {
+  std::ifstream file("/etc/authService.conf");
+  if(file)
+  {
   auto hex = jsonRpc.invoke(_T("org.rdk.AuthService"),
                             _T("getDeviceInfo"), 10000)
       .Get(_T("deviceInfo")).String();
   auto deviceInfo = stringFromHex(hex);
-
   std::smatch m;
   std::regex_search(deviceInfo, m, std::regex("deviceType=(\\w+),"));
   return (m.empty() ? string() : m[1]);
-}
-#else
-string PlatformCapsData::GetDeviceType() {
-  return jsonRpc.invoke(_T("org.rdk.System"),
+  }
+  else
+  {
+      const char* device_type;
+      string deviceType;
+
+  deviceType = jsonRpc.invoke(_T("org.rdk.System"),
                         _T("getDeviceInfo"), 10000)
       .Get(_T("device_type")).String();
+
+  device_type = deviceType.c_str();
+  deviceType = (strcmp("mediaclient", device_type) == 0) ? "IpStb" : (strcmp("hybrid", device_type) == 0) ? "QamIpStb" : "TV";
+   return deviceType;
+  }
 }
-#endif
 
 string PlatformCapsData::GetHDRCapability() {
   JsonArray hdrCaps = jsonRpc.invoke(_T("org.rdk.DisplaySettings"),
